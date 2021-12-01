@@ -14,14 +14,8 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
-    friends: {
-        type: Array,
-        default: []
-    },
-    rooms: {
-        type: Array,
-        default: []
-    }
+    friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    conversations: [{ type: Schema.Types.ObjectId, ref: "Conversation" }]
 });
 
 module.exports = mongoose.model("User", userSchema)

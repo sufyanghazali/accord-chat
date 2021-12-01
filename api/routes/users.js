@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
 const User = require("../models/user");
-const { route } = require("./auth");
+const Conversation = require("../models/conversation");
 
 // READ
 router.get("/:id", async (req, res) => {
@@ -19,7 +18,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // UPDATE - Add friend
-router.put("/:id/follow", async (req, res) => {
+router.put("/:friendId/follow", async (req, res) => {
     const { userId } = req.body;
     const { friendId } = req.params;
 
@@ -31,13 +30,14 @@ router.put("/:id/follow", async (req, res) => {
             // if person is not already a friend, add each other
             if (!user.friends.includes(friendId)) {
                 // $push operator appends a specified value to an array
-                await user.updateOne({ $push: { friends: id } });
+                await user.updateOne({ $push: { friends: friendId } });
                 await friend.updateOne({ $push: { friends: userId } });
                 res.status(200).json("You guys are now friends")
             } else {
                 res.status(403).json("You are already friends with this person")
             }
         } catch (err) {
+            console.log(err)
             res.status(500).json(err);
         }
     } else {
@@ -46,7 +46,7 @@ router.put("/:id/follow", async (req, res) => {
 });
 
 // DELETE
-router.put("/:id/unfollow", async (req, res) => {
+router.put("/:friendId/unfollow", async (req, res) => {
     const { userId } = req.body;
     const { friendId } = req.params;
 
@@ -71,5 +71,25 @@ router.put("/:id/unfollow", async (req, res) => {
         res.status(403).json("You can't unfriend yourself...");
     }
 });
+
+// Get user's conversations 
+router.get("/:id/conversations", async (req, res) => {
+    try {
+        // alternative query
+        const conversations = await Messages.find({
+            participants: { $in: [req.params.id] }
+        });
+
+        // const user = await User.findById(req.params.id)
+        //     .populate({
+        //         path: "conversations"
+        //     });
+        res.status(200).json(conversations);
+    } catch (err) {
+        console.log(err);
+    }
+});
+
+
 
 module.exports = router;
