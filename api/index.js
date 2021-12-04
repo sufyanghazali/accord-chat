@@ -13,8 +13,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000",
-        methods: ["GET", "POST"]
+        origin: "http://localhost:3000"
     }
 });
 
@@ -23,9 +22,12 @@ const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const messagesRoute = require("./routes/messages");
 
+
+// connect to database
 mongoose.connect(process.env.MONGO_URL, () => {
     console.log("Connected to database");
 });
+
 
 // middleware
 app.use(cors())
@@ -37,10 +39,31 @@ app.use("/", authRoute);
 app.use("/user", userRoute);
 app.use("/messages", messagesRoute);
 
+
+// socket
 io.on("connection", (socket) => {
-    console.log("A user connected");
+    // server keeps track of online
+    // "we are only retrieving th users of the current Socket.IO server (not suitable when scaling up)"
+    const users = [];
+    for (let [id, socket] of io.of("/").sockets) {
+        users.push(id);
+    }
+
+    // notify existing users that another user just connected
+    socket.broadcast.emit("user connected", socket.id);
+
+    socket.emit("users", users);
+
     socket.on("disconnect", () => {
         console.log("User has yeeted");
+    });
+
+    socket.on("chat message", message => {
+        console.log("server received message")
+        io.emit("chat message", {
+            ...message,
+            yeet: "yeet"
+        });
     });
 });
 

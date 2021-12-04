@@ -75,11 +75,11 @@ router.put("/:friendId/unfollow", async (req, res) => {
 // Get user's conversations 
 router.get("/:id/conversations", async (req, res) => {
     try {
-        // alternative query
-        const conversations = await Messages.find({
+        const conversations = await Conversation.find({
             participants: { $in: [req.params.id] }
         });
 
+        // alternative query
         // const user = await User.findById(req.params.id)
         //     .populate({
         //         path: "conversations"
@@ -89,6 +89,15 @@ router.get("/:id/conversations", async (req, res) => {
         console.log(err);
     }
 });
+
+
+/*
+const conversations = await Conversation.find({
+    participants:{$all: [user._id, friend._id]}
+})
+
+or store the conversations/rooms in user?
+*/
 
 
 

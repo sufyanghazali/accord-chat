@@ -5,7 +5,8 @@ import Home from "../views/home/Home";
 import Login from "../views/login/Login";
 import Register from "../views/register/Register";
 import Messenger from "../views/messenger/Messenger";
-import { SocketContext, socket } from "../contexts/socket";
+import socket from "../socket";
+import { SocketContext } from "../contexts/SocketContext";
 
 const App = () => {
     const { user } = useContext(AuthContext);

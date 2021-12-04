@@ -3,29 +3,45 @@ import { AuthContext } from "../../contexts/AuthContext";
 import ChatOnline from "../../components/messenger/ChatOnline";
 import Conversation from "../../components/messenger/Conversation";
 import { useContext, useEffect, useState } from "react";
-import { SocketContext } from "../../contexts/socket";
+import { SocketContext } from "../../contexts/SocketContext";
 
 const Messenger = () => {
     const [conversations, setConversations] = useState([]);
     const [currentChat, setCurrentChat] = useState(null);
     const [newMessage, setNewMessage] = useState("");
-    const [messages, setMessages] = useState([])
-    const [receivedMessage, setReceivedMessage] = useState(null);
+    const [messages, setMessages] = useState([]);
+    const [users, setUsers] = useState([])
     const { user } = useContext(AuthContext);
     const socket = useContext(SocketContext);
 
-    // connect to socket
+    // on connect to socket
     useEffect(() => {
+        if (user)
+            socket.connect();
+
         socket.on("connect", () => {
             console.log("client connected");
-        })
-    }, [socket]);
+        });
+
+        socket.on("users", users => setUsers(users));
+
+        socket.on("user connected", user => setUsers([...users, user]))
+
+    }, [socket, user, users]);
+
+    // update MessageList component on message sent/received
+    useEffect(() => {
+        socket.on("chat message", message => {
+            setMessages([...messages, message]);
+        });
+    }, [socket, messages])
 
     // get a user's conversations
     useEffect(() => {
         const getConversations = async () => {
             try {
                 const res = await axios.get(`http://localhost:8080/user/${ user._id }/conversations`);
+                console.log(res.data);
                 setConversations(res.data);
             } catch (err) {
                 console.log(err);
@@ -42,17 +58,19 @@ const Messenger = () => {
         // })
     }, [socket, user]);
 
-    // get messages for current conversation
+    // get messages of current conversation
     useEffect(() => {
         const getMessages = async () => {
             try {
                 // "?." is called optional chaining.
-                const messages = await axios.get(`http://localhost:8080/conversations/${ currentChat?._id }`)
+                const messages = await axios.get(`http://localhost:8080/conversations/${ currentChat?._id }`);
+                setMessages(messages);
             } catch (err) {
                 console.log(err);
             }
         }
-    })
+        getMessages();
+    }, [currentChat])
 
     // Send message
     const handleSubmit = async e => {
@@ -60,7 +78,7 @@ const Messenger = () => {
 
         // create message
         const message = {
-            conversation_id: currentChat._id,
+            conversation_id: currentChat?._id,
             sender_id: user._id,
             message: newMessage
         };
@@ -71,8 +89,11 @@ const Messenger = () => {
         // -> user receives event and message
         // -> adds to messages state
         // -> rerender messagelist component
+        socket.emit("chat message", message);
 
 
+
+        /*
         // post message to database
         try {
             const res = await axios.post("http://localhost:8080/messages", message); // post new message
@@ -81,6 +102,7 @@ const Messenger = () => {
         } catch (err) {
             console.log(err);
         }
+        */
     }
 
 
@@ -115,7 +137,10 @@ const Messenger = () => {
             </div>
             <div className="chat-online">
                 <div className="chat-online-wrapper">
-                    <ChatOnline />
+                    {users.map(user => (
+                        <div>{user}</div>
+                    ))}
+                    {/* <ChatOnline /> */}
                 </div>
             </div>
         </div>
