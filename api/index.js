@@ -39,30 +39,33 @@ app.use("/", authRoute);
 app.use("/user", userRoute);
 app.use("/messages", messagesRoute);
 
+// keep track of online users - https://stackoverflow.com/questions/32134623/socket-io-determine-if-a-user-is-online-or-offline
+//https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
 
 // socket
 io.on("connection", (socket) => {
     // server keeps track of online
     // "we are only retrieving th users of the current Socket.IO server (not suitable when scaling up)"
     const users = [];
+
     for (let [id, socket] of io.of("/").sockets) {
-        users.push(id);
+        users.push(socket.id);
     }
+
+    // send all existing users to the client
+    socket.emit("users", users);
 
     // notify existing users that another user just connected
     socket.broadcast.emit("user connected", socket.id);
-
-    socket.emit("users", users);
 
     socket.on("disconnect", () => {
         console.log("User has yeeted");
     });
 
-    socket.on("chat message", message => {
-        console.log("server received message")
-        io.emit("chat message", {
-            ...message,
-            yeet: "yeet"
+    socket.on("chat message", ({ message, to }) => {
+        socket.to(to).emit("chat message", {
+            message,
+            from: socket.id
         });
     });
 });

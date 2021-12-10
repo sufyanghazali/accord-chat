@@ -1,0 +1,7 @@
+.messenger {
+    display: flex;
+}
+.users,
+.chat-box {
+    padding: 1rem;
+}
