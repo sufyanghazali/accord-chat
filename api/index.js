@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 const helmet = require("helmet"); // Helmet helps you secure your Express apps by setting various HTTP headers.
 const morgan = require("morgan");
 const cors = require("cors");
+const crypto = require("crypto");
+const randomId = () => crypto.randomBytes(8).toString("hex");
 
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -42,6 +44,27 @@ app.use("/messages", messagesRoute);
 // keep track of online users - https://stackoverflow.com/questions/32134623/socket-io-determine-if-a-user-is-online-or-offline
 //https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
 
+io.use((socket, next) => {
+    const sessionID = socket.handshake.auth.sessionID;
+    if (sessionID) {
+        const session = sessionStore.findSession(sessionID);
+        if (session) {
+            socket.sessionID = sessionID;
+            socket.user = session.user;
+            return next();
+        }
+    }
+
+    const user = socket.handshake.auth.user;
+    if (!user) {
+        return next(new Error("Invalid user"));
+    }
+
+    socket.sessionID = randomId();
+    socket.user = user;
+    next();
+})
+
 // socket
 io.on("connection", (socket) => {
     // server keeps track of online
@@ -49,14 +72,20 @@ io.on("connection", (socket) => {
     const users = [];
 
     for (let [id, socket] of io.of("/").sockets) {
-        users.push(socket.id);
+        users.push(socket.user.username);
     }
 
     // send all existing users to the client
     socket.emit("users", users);
 
+    socket.emit("session", {
+        sessionID: socket.sessionID,
+        user: socket.user
+    });
+    
+
     // notify existing users that another user just connected
-    socket.broadcast.emit("user connected", socket.id);
+    socket.broadcast.emit("user connected", socket.user.username);
 
     socket.on("disconnect", () => {
         console.log("User has yeeted");

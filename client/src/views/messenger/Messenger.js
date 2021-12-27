@@ -16,10 +16,20 @@ const Messenger = () => {
     const { user } = useContext(AuthContext);
     const socket = useContext(SocketContext);
 
+
+    useEffect(() => {
+        const sessionID = localStorage.getItem("sessionID");
+
+        if (sessionID) {
+            socket.auth = { sessionID };
+            socket.connect();
+        }
+    })
+
     // on connect to socket
     useEffect(() => {
         if (user) {
-            socket.user = user;
+            socket.auth = { user }; // send credentials to server
             socket.connect();
         }
 
@@ -31,8 +41,10 @@ const Messenger = () => {
 
         socket.on("user connected", user => setUsers([...users, user]));
 
-        socket.on("chat message", ({ content, from }) => {
-
+        socket.on("session", ({ sessionID, user }) => {
+            socket.auth = { sessionID };
+            localStorage.setItem("sessionID", sessionID);
+            socket.user = user;
         })
 
     }, [socket, user, users]);
