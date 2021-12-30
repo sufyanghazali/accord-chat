@@ -30,9 +30,12 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", async (req, res) => {
     try {
+        console.log("login hit")
         const user = await User.findOne({
             email: req.body.email
         });
+
+        console.log(user);
 
         // if user == null
         !user && res.status(404).json("User not found");
@@ -43,6 +46,7 @@ router.post("/login", async (req, res) => {
 
         res.status(200).json(user);
     } catch (err) {
+        console.log(err);
         res.status(500).json(err);
     }
 });

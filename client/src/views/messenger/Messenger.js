@@ -16,7 +16,7 @@ const Messenger = () => {
     const { user } = useContext(AuthContext);
     const socket = useContext(SocketContext);
 
-
+    // on connect to socket
     useEffect(() => {
         const sessionID = localStorage.getItem("sessionID");
 
@@ -24,10 +24,7 @@ const Messenger = () => {
             socket.auth = { sessionID };
             socket.connect();
         }
-    })
-
-    // on connect to socket
-    useEffect(() => {
+        
         if (user) {
             socket.auth = { user }; // send credentials to server
             socket.connect();

@@ -45,6 +45,8 @@ app.use("/messages", messagesRoute);
 //https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
 
 io.use((socket, next) => {
+
+    // if the session id exists, find it in store...
     const sessionID = socket.handshake.auth.sessionID;
     if (sessionID) {
         const session = sessionStore.findSession(sessionID);
@@ -55,11 +57,13 @@ io.use((socket, next) => {
         }
     }
 
+    // ... if not, check if user authenticated...
     const user = socket.handshake.auth.user;
     if (!user) {
         return next(new Error("Invalid user"));
     }
 
+    // ... then create new session
     socket.sessionID = randomId();
     socket.user = user;
     next();
@@ -67,6 +71,8 @@ io.use((socket, next) => {
 
 // socket
 io.on("connection", (socket) => {
+    socket.join(socket.user._id);
+
     // server keeps track of online
     // "we are only retrieving th users of the current Socket.IO server (not suitable when scaling up)"
     const users = [];
@@ -82,7 +88,7 @@ io.on("connection", (socket) => {
         sessionID: socket.sessionID,
         user: socket.user
     });
-    
+
 
     // notify existing users that another user just connected
     socket.broadcast.emit("user connected", socket.user.username);
