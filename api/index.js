@@ -11,6 +11,9 @@ const cors = require("cors");
 const crypto = require("crypto");
 const randomId = () => crypto.randomBytes(8).toString("hex");
 
+const { InMemorySessionStore } = require("./sessionStore");
+const sessionStore = new InMemorySessionStore();
+
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server, {
@@ -24,12 +27,10 @@ const authRoute = require("./routes/auth");
 const userRoute = require("./routes/users");
 const messagesRoute = require("./routes/messages");
 
-
 // connect to database
 mongoose.connect(process.env.MONGO_URL, () => {
     console.log("Connected to database");
 });
-
 
 // middleware
 app.use(cors())
@@ -71,6 +72,7 @@ io.use((socket, next) => {
 
 // socket
 io.on("connection", (socket) => {
+    console.log(socket);
     socket.join(socket.user._id);
 
     // server keeps track of online

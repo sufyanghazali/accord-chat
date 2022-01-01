@@ -15,7 +15,6 @@ const Messenger = () => {
     const [users, setUsers] = useState([]);
     const { user } = useContext(AuthContext);
     const socket = useContext(SocketContext);
-
     // on connect to socket
     useEffect(() => {
         const sessionID = localStorage.getItem("sessionID");
@@ -24,7 +23,7 @@ const Messenger = () => {
             socket.auth = { sessionID };
             socket.connect();
         }
-        
+
         if (user) {
             socket.auth = { user }; // send credentials to server
             socket.connect();
@@ -53,34 +52,6 @@ const Messenger = () => {
         });
     }, [socket, messages])
 
-    // get a user's conversations
-    // useEffect(() => {
-    //     const getConversations = async () => {
-    //         try {
-    //             const res = await axios.get(`http://localhost:8080/user/${ user._id }/conversations`);
-    //             console.log(res.data);
-    //             setConversations(res.data);
-    //         } catch (err) {
-    //             console.log(err);
-    //         }
-    //     }
-    //     getConversations();
-    // }, [user]);
-
-    // get messages of current conversation
-    // useEffect(() => {
-    //     const getMessages = async () => {
-    //         try {
-    //             // "?." is called optional chaining.
-    //             const messages = await axios.get(`http://localhost:8080/conversations/${ selectedUser?._id }`);
-    //             setMessages(messages);
-    //         } catch (err) {
-    //             console.log(err);
-    //         }
-    //     }
-    //     getMessages();
-    // }, [selectedUser])
-
     // Send message
     const handleSubmit = async e => {
         e.preventDefault();
@@ -97,19 +68,11 @@ const Messenger = () => {
         setNewMessage("");
 
         socket.emit("chat message", message);
-
-        /*
-        // post message to database
-        try {
-            const res = await axios.post("http://localhost:8080/messages", message); // post new message
-            setMessages([...messages, res.data]); // update messages state
-            setNewMessage(""); // empty chat input
-        } catch (err) {
-            console.log(err);
-        }
-        */
     }
 
+    const handleChange = e => {
+        setNewMessage(e.target.value);
+    }
 
     const handleSelectUser = user => {
         setSelectedUser(user);
@@ -128,12 +91,12 @@ const Messenger = () => {
                         <>
                             <div className="chat-box-top">
                                 {messages.map(message => (
-                                    <div>{message}</div>
+                                    <div>{message.message}</div>
                                 ))}
                             </div>
                             <div className="chat-box-bottom">
                                 {/* look into contenteditable divs */}
-                                <textarea></textarea>
+                                <textarea onChange={handleChange} value={newMessage}></textarea>
                                 <button onClick={handleSubmit}>Send</button>
                             </div>
                         </>
